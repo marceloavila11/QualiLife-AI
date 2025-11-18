@@ -1,0 +1,89 @@
+# =========================================
+# GLOBAL (OS / EDITOR)
+# =========================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDEs
+.vscode/
+.idea/
+*.code-workspace
+
+# =========================================
+# ENVIRONMENT / KEYS
+# =========================================
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# =========================================
+# PYTHON BACKEND
+# =========================================
+backend/__pycache__/
+backend/**/*.py[cod]
+backend/**/$py.class
+
+backend/.venv/
+backend/venv/
+backend/env/
+backend/ENV/
+
+backend/dist/
+backend/build/
+backend/*.egg-info/
+backend/pip-wheel-metadata/
+
+backend/logs/
+backend/tmp/
+backend/temp/
+backend/.cache/
+
+backend/.pytest_cache/
+backend/.coverage
+backend/coverage/
+backend/htmlcov/
+
+backend/models/
+backend/checkpoints/
+backend/artifacts/
+backend/runs/
+
+backend/*.sqlite
+backend/*.sqlite3
+backend/*.db
+backend/*.pkl
+backend/*.joblib
+
+# =========================================
+# FRONTEND (ASTRO + REACT)
+# =========================================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.astro/
+frontend/.cache/
+frontend/.temp/
+
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+frontend/*.local
+
+# =========================================
+# INFRA
+# =========================================
+docker-data/
+*.pid
+
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+
+.aws/
+.gcloud/

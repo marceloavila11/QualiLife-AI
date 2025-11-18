@@ -1,0 +1,209 @@
+---
+interface Props {
+  apiBase: string;
+}
+const { apiBase } = Astro.props;
+---
+
+<div
+  id="indicator-grid-panel"
+  data-api-base={apiBase}
+  class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
+>
+  <h3 class="text-lg font-semibold mb-2 text-teal-700 dark:text-teal-400">
+    Indicadores principales
+  </h3>
+
+  <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">
+    Aquí verás economía, salud, clima, educación y más para el país
+    seleccionado.
+  </p>
+</div>
+
+<div
+  id="indicator-modal"
+  class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[300]
+         opacity-0 pointer-events-none transition-opacity duration-300"
+>
+  <div
+    id="indicator-modal-content"
+    class="bg-white dark:bg-gray-900 p-6 rounded-xl shadow-xl w-[90%] max-w-xl max-h-[80vh]
+           overflow-y-auto transform scale-90 opacity-0 transition-all duration-300"
+  >
+  </div>
+
+  <button
+    onclick="closeIndicatorModal()"
+    class="absolute top-6 right-6 text-white text-2xl font-bold"
+  >
+    ✕
+  </button>
+</div>
+
+<script>
+  // @ts-nocheck
+  (function () {
+    const container = document.getElementById("indicator-grid-panel");
+    if (!container) return;
+
+    const API_BASE = container.dataset.apiBase;
+
+    async function fetchQLI(country) {
+      try {
+        const clean = encodeURIComponent(country.trim().toLowerCase());
+        const res = await fetch(`${API_BASE}/qli/auto?country=${clean}`);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (err) {
+        console.error("❌ [IndicatorGrid] Error:", err);
+        return null;
+      }
+    }
+
+    window.openIndicatorMetric = (metric) => {
+      const api = window.__lastQLI;
+      if (!api || !api.data) return;
+
+      const modal = document.getElementById("indicator-modal");
+      const content = document.getElementById("indicator-modal-content");
+
+      modal.classList.remove("opacity-0", "pointer-events-none");
+      content.classList.remove("opacity-0", "scale-90");
+
+      const raw = api.data[metric];
+      const percent = typeof raw === "number" ? (raw * 100).toFixed(1) : "N/A";
+      const countryName = api.country || "N/A";
+
+      const metricSourceMap = {
+        economy: "World Bank",
+        health: "WHO",
+        connectivity: "ITU",
+        safety: "Numbeo",
+        equality: "UNDP",
+        education: "UNESCO",
+        climate: "Climate Portal",
+      };
+
+      const sourceName = metricSourceMap[metric] || "Fuente desconocida";
+      const sourceText =
+        api?.insights?.sources?.[sourceName] ??
+        "No existe análisis detallado para esta fuente.";
+
+      content.innerHTML = `
+        <h2 class="text-xl font-bold text-teal-600 dark:text-teal-300 mb-4 capitalize">
+          ${metric}
+        </h2>
+
+        <p class="text-gray-700 dark:text-gray-300 mb-4">
+          Valor del indicador:
+          <span class="font-semibold text-teal-500">${percent}%</span>
+        </p>
+
+        <h3 class="text-lg font-semibold text-teal-500 mb-3">
+          Fuente: ${sourceName}
+        </h3>
+
+        <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-lg">
+          <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            ${String(sourceText)}
+          </p>
+        </div>
+      `;
+    };
+
+    /* ==========================================
+       Cerrar modal
+    =========================================== */
+    window.closeIndicatorModal = () => {
+      const modal = document.getElementById("indicator-modal");
+      const content = document.getElementById("indicator-modal-content");
+
+      modal.classList.add("opacity-0", "pointer-events-none");
+      content.classList.add("opacity-0", "scale-90");
+    };
+
+    /* ==========================================
+       Render indicadores (cards clickeables)
+    =========================================== */
+    function renderIndicators(api) {
+      const keys = [
+        "economy",
+        "health",
+        "safety",
+        "climate",
+        "education",
+        "connectivity",
+        "equality",
+      ];
+
+      return keys
+        .filter((k) => typeof api?.data?.[k] === "number")
+        .map((metric) => {
+          const v = Math.min(Math.max(Number(api.data[metric]) * 100, 0), 100);
+
+          return `
+            <div
+              class="bg-gray-50 dark:bg-gray-700/40 p-3 rounded-lg border border-gray-200 dark:border-gray-600
+                     hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-all"
+              onclick="openIndicatorMetric('${metric}')"
+            >
+              <div class="flex justify-between items-center mb-1">
+                <span class="capitalize text-gray-700 dark:text-gray-200">${metric}</span>
+                <span class="text-teal-500 font-semibold">${v.toFixed(1)}%</span>
+              </div>
+
+              <div class="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                <div class="h-2 bg-teal-500 rounded-full" style="width:${v}%"></div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+
+    /* ==========================================
+       Escuchar país seleccionado
+    =========================================== */
+    window.addEventListener("countrySelect", async (event) => {
+      const country = event?.detail;
+      if (!country) return;
+
+      container.innerHTML = `
+        <h3 class="text-lg font-semibold mb-2 text-teal-700 dark:text-teal-400">
+          Indicadores principales
+        </h3>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">
+          Cargando indicadores de <strong>${country}</strong>...
+        </p>
+      `;
+      const api = await fetchQLI(country);
+
+      if (!api || !api.data) {
+        container.innerHTML = `
+          <h3 class="text-lg font-semibold mb-2 text-teal-700 dark:text-teal-400">
+            Indicadores principales
+          </h3>
+          <p class="text-red-600 dark:text-red-400 text-sm">
+            No se pudieron obtener los indicadores.
+          </p>
+        `;
+        return;
+      }
+
+      // Guardar el último payload para que el modal use exactamente la misma data
+      window.__lastQLI = api;
+
+      const cards = renderIndicators(api);
+
+      container.innerHTML = `
+        <h3 class="text-lg font-semibold mb-4 text-teal-700 dark:text-teal-400">
+          Indicadores principales
+        </h3>
+
+        <div class="flex flex-col gap-3 w-full">
+          ${cards}
+        </div>
+      `;
+    });
+  })();
+</script>

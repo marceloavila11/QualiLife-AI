@@ -1,0 +1,247 @@
+---
+/* GlobalMap — versión completa final optimizada */
+---
+
+<div class="relative w-full select-none">
+  <div
+    id="map-wrapper"
+    class="relative w-full rounded-xl overflow-hidden bg-white dark:bg-gray-900
+         transition-all duration-700 ease-in-out
+         h-[48vh] sm:h-[52vh] md:h-[65vh]"
+  >
+    <div id="map" class="absolute inset-0 z-0"></div>
+
+    <div
+      id="map-loader"
+      class="absolute inset-0 flex items-center justify-center
+             bg-white/70 dark:bg-gray-900/60 backdrop-blur-sm z-20"
+    >
+      <p class="text-gray-800 dark:text-gray-300 text-sm animate-pulse">
+        Cargando mapa...
+      </p>
+    </div>
+
+    <div
+      class="absolute top-3 right-3
+             w-40 sm:w-56 px-3 py-2 rounded-xl shadow-lg border border-gray-700
+             bg-gray-900/85 backdrop-blur-md z-[40] flex flex-col gap-1.5"
+    >
+      <label
+        class="text-[10px] sm:text-xs font-semibold text-gray-200 uppercase tracking-wide"
+      >
+        País
+      </label>
+
+      <select
+        id="countrySelect"
+        class="w-full px-2 py-1.5 border border-gray-700 rounded-md text-sm
+               bg-gray-800 text-gray-100 focus:ring-2 focus:ring-teal-500"
+      >
+        <option value="">-- Seleccionar --</option>
+      </select>
+    </div>
+
+    <div
+      id="confirm-panel"
+      class="hidden absolute left-1/2 bottom-4 -translate-x-1/2
+         w-[95%] sm:w-[85%] md:w-[60%] lg:w-[380px]
+         px-4 sm:px-5 py-4 rounded-xl shadow-xl border border-gray-700
+         bg-white/95 dark:bg-gray-800/95 text-center
+         transition-all duration-300"
+    >
+      <p
+        class="text-gray-700 dark:text-gray-200 mb-4
+           text-sm sm:text-base leading-relaxed"
+      >
+        ¿Confirmar
+        <span id="country-name" class="font-semibold text-teal-600"></span>?
+      </p>
+
+      <div
+        class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 w-full"
+      >
+        <button
+          id="confirm-btn"
+          class="px-4 py-2 rounded-md text-white bg-teal-600 hover:bg-teal-700
+             text-sm sm:text-base w-full sm:w-auto"
+        >
+          Confirmar
+        </button>
+
+        <button
+          id="cancel-btn"
+          class="px-4 py-2 rounded-md bg-gray-200 dark:bg-gray-700
+             text-gray-800 dark:text-gray-200
+             text-sm sm:text-base w-full sm:w-auto"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // @ts-nocheck
+  const geoUrl =
+    "https://cdn.jsdelivr.net/gh/datasets/geo-countries@master/data/countries.geojson";
+
+  async function initMap() {
+    const wrapper = document.getElementById("map-wrapper");
+    const mapContainer = document.getElementById("map");
+    const loader = document.getElementById("map-loader");
+
+    const select = document.getElementById("countrySelect");
+    const confirmPanel = document.getElementById("confirm-panel");
+    const confirmBtn = document.getElementById("confirm-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const countryNameLabel = document.getElementById("country-name");
+
+    if (!mapContainer) return;
+
+    const L = await import(
+      "https://unpkg.com/leaflet@1.9.4/dist/leaflet-src.esm.js"
+    );
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    document.head.appendChild(link);
+
+    const map = L.map(mapContainer, {
+      center: [20, 0],
+      zoom: 2,
+      minZoom: 2,
+      maxZoom: 8,
+      worldCopyJump: true,
+      maxBounds: L.latLngBounds([-85, -180], [85, 180]),
+    });
+
+    new ResizeObserver(() => map.invalidateSize()).observe(wrapper);
+
+    window.addEventListener("countryConfirmed", () =>
+      setTimeout(() => map.invalidateSize(), 350)
+    );
+    window.addEventListener("expandMapTriggered", () =>
+      setTimeout(() => map.invalidateSize(), 350)
+    );
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+      map
+    );
+
+    const res = await fetch(geoUrl);
+    const countries = await res.json();
+
+    let selectedLayer = null;
+    let selectedCountry = null;
+
+    const list = [
+      ...new Set(countries.features.map((f) => f.properties.name)),
+    ].sort();
+
+    list.forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name.toLowerCase();
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+
+    const geoLayer = L.geoJSON(countries, {
+      style: {
+        color: "#0d9488",
+        weight: 1,
+        fillColor: "#14b8a6",
+        fillOpacity: 0.15,
+      },
+      onEachFeature: (feature, layer) => {
+        const name = feature.properties.name;
+
+        layer.on({
+          mouseover: (e) => e.target.setStyle({ fillOpacity: 0.35 }),
+          mouseout: (e) => {
+            if (selectedLayer !== e.target) geoLayer.resetStyle(e.target);
+          },
+          click: () => {
+            if (selectedLayer) geoLayer.resetStyle(selectedLayer);
+
+            selectedLayer = layer;
+            selectedCountry = name;
+
+            select.value = name.toLowerCase();
+
+            layer.setStyle({ fillOpacity: 0.6, fillColor: "#0f766e" });
+
+            map.fitBounds(layer.getBounds());
+            countryNameLabel.textContent = name;
+            confirmPanel.classList.remove("hidden");
+          },
+        });
+      },
+    }).addTo(map);
+
+    loader.remove();
+
+    select.addEventListener("change", () => {
+      const val = select.value;
+      if (!val) return;
+
+      const feature = countries.features.find(
+        (f) => f.properties.name.toLowerCase() === val
+      );
+
+      if (!feature) return;
+
+      if (selectedLayer) geoLayer.resetStyle(selectedLayer);
+
+      geoLayer.eachLayer((layer) => {
+        if (layer.feature.properties.name.toLowerCase() === val) {
+          selectedLayer = layer;
+          selectedCountry = layer.feature.properties.name;
+
+          layer.setStyle({
+            fillOpacity: 0.6,
+            fillColor: "#0f766e",
+          });
+
+          map.fitBounds(layer.getBounds());
+          countryNameLabel.textContent = selectedCountry;
+          confirmPanel.classList.remove("hidden");
+        }
+      });
+    });
+
+    cancelBtn.addEventListener("click", () => {
+      confirmPanel.classList.add("hidden");
+      if (selectedLayer) geoLayer.resetStyle(selectedLayer);
+
+      selectedLayer = null;
+      selectedCountry = null;
+      select.value = "";
+    });
+
+    confirmBtn.addEventListener("click", () => {
+      confirmPanel.classList.add("hidden");
+
+      if (selectedCountry) {
+        window.dispatchEvent(
+          new CustomEvent("countrySelect", { detail: selectedCountry })
+        );
+        window.dispatchEvent(new CustomEvent("countryConfirmed"));
+      }
+    });
+
+    /* ========== Reset al expandir mapa ========== */
+    window.addEventListener("expandMapTriggered", () => {
+      confirmPanel.classList.add("hidden");
+      select.value = "";
+
+      if (selectedLayer) geoLayer.resetStyle(selectedLayer);
+      selectedLayer = null;
+      selectedCountry = null;
+
+      map.setView([20, 0], 2);
+    });
+  }
+
+  initMap();
+</script>

@@ -1,0 +1,111 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout>
+  <div class="max-w-6xl mx-auto px-6 py-16 space-y-16">
+    <section class="text-center space-y-4 animate-fade">
+      <h1 class="text-4xl font-extrabold text-teal-300">
+        Documentación Oficial
+      </h1>
+      <p class="text-gray-400 text-lg">
+        Guía completa para utilizar, integrar y extender QualiLife AI.
+      </p>
+    </section>
+
+    <section class="space-y-4 animate-fade animate-delay-1">
+      <h2 class="text-2xl font-semibold text-teal-300">Introducción</h2>
+      <p class="text-gray-400">
+        La API de QualiLife AI unifica múltiples fuentes de datos
+        internacionales, aplica normalización estadística, calcula métricas de
+        bienestar y genera insights asistidos por IA basados en LLMs.
+      </p>
+    </section>
+
+    <section class="space-y-4 animate-fade animate-delay-2">
+      <h2 class="text-2xl font-semibold text-teal-300">Arquitectura General</h2>
+
+      <div class="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg">
+        <ul class="list-disc list-inside text-gray-400 space-y-2">
+          <li>Frontend: Astro + Tailwind + Leaflet</li>
+          <li>Backend: FastAPI + Python 3.11</li>
+          <li>Modelo IA: Gemini/OpenAI</li>
+          <li>Almacenamiento: MongoDB</li>
+          <li>Capa de integración: Microservicios</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="space-y-6 animate-fade animate-delay-3">
+      <h2 class="text-2xl font-semibold text-teal-300">
+        Endpoints Principales
+      </h2>
+
+      <div
+        class="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg animate-fade animate-delay-3"
+      >
+        <h3 class="text-xl text-teal-300 font-bold">
+          GET /qli/auto?country=XX
+        </h3>
+        <p class="text-gray-400 mt-2">
+          Retorna el cálculo completo del QLI (Quality of Life Index) con
+          métricas y análisis generados por IA.
+        </p>
+
+        <pre
+          class="bg-gray-800 text-gray-300 p-4 rounded-lg text-sm mt-4 overflow-x-auto">
+&#123;
+  "qli": 0.462,
+  "data": &#123;
+    "economy": 0.109,
+    "health": 0.5355,
+    "connectivity": 0.523,
+    "safety": 0.5,
+    "equality": 0.5,
+    "education": 0.571,
+    "climate": 0.4945
+  &#125;,
+  "insights": &#123; ... &#125;
+&#125;
+        </pre>
+      </div>
+
+      <div
+        class="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg animate-fade animate-delay-4"
+      >
+        <h3 class="text-xl text-teal-300 font-bold">POST /qli/calculate</h3>
+        <p class="text-gray-400 mt-2">
+          Permite enviar métricas personalizadas para calcular un QLI propio.
+        </p>
+
+        <pre
+          class="bg-gray-800 text-gray-300 p-4 rounded-lg text-sm mt-4 overflow-x-auto">
+&#123;
+  "economy": 0.5,
+  "health": 0.7,
+  "education": 0.6,
+  "climate": 0.4
+&#125;
+        </pre>
+      </div>
+    </section>
+
+    <section class="space-y-4 animate-fade animate-delay-4">
+      <h2 class="text-2xl font-semibold text-teal-300">Eventos Frontend</h2>
+      <p class="text-gray-400">
+        QualiLife AI expone eventos personalizados para sincronizar el mapa, el
+        análisis y el loader global.
+      </p>
+
+      <div
+        class="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg animate-fade animate-delay-4"
+      >
+        <pre
+          class="bg-gray-800 text-gray-300 p-4 rounded-lg text-sm overflow-x-auto">
+window.dispatchEvent(new CustomEvent("countrySelect", &#123; detail: "Ecuador" &#125;));
+window.dispatchEvent(new CustomEvent("countryConfirmed"));
+        </pre>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

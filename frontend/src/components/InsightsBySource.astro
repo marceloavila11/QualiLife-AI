@@ -1,0 +1,142 @@
+---
+interface Props {
+  apiBase: string;
+}
+const { apiBase } = Astro.props;
+---
+
+<div
+  id="insights-by-source-panel"
+  data-api-base={apiBase}
+  class="w-full max-w-full rounded-2xl p-6 bg-gray-900/60 border border-gray-700 shadow-inner
+         backdrop-blur-md space-y-6 transition-all duration-300"
+>
+  <h3 class="text-xl font-semibold text-teal-400 tracking-tight">
+    Análisis por fuentes
+  </h3>
+
+  <p class="text-gray-400 text-sm leading-relaxed">
+    Selecciona un país para ver los indicadores analizados por fuentes
+    oficiales.
+  </p>
+</div>
+
+<script>
+  // @ts-nocheck
+  (function () {
+    const container = document.getElementById("insights-by-source-panel");
+    const API_BASE = container.dataset.apiBase;
+
+    let lastApi = null;
+
+    async function fetchQLI(country) {
+      try {
+        const clean = encodeURIComponent(country.trim().toLowerCase());
+        const res = await fetch(`${API_BASE}/qli/auto?country=${clean}`);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch (err) {
+        console.error("❌ [InsightsBySource] Error:", err);
+        return null;
+      }
+    }
+
+    window.addEventListener("countrySelect", async (event) => {
+      const raw = event?.detail;
+      if (!raw) return;
+
+      const country = String(raw).trim();
+
+      container.innerHTML = `
+      <h3 class="text-xl font-semibold text-teal-400 tracking-tight">
+        Análisis por fuentes
+      </h3>
+      <p class="text-gray-400 text-sm">
+        Cargando análisis para <strong class='text-teal-300'>${country}</strong>...
+      </p>
+    `;
+
+      const api = await fetchQLI(country);
+      lastApi = api;
+
+      if (!api || !api.insights?.sources) {
+        container.innerHTML = `
+        <h3 class="text-xl font-semibold text-teal-400 tracking-tight">Análisis por fuentes</h3>
+        <p class="text-red-500 text-sm">No se pudo obtener información por fuente.</p>
+      `;
+        return;
+      }
+
+      const cards = Object.entries(api.insights.sources)
+        .map(
+          ([name, text]) => `
+        <div
+          class="flex flex-col h-full rounded-xl bg-gray-800/80 border border-gray-700 shadow-md
+                 hover:shadow-lg hover:border-teal-600 transition-all duration-200 p-5
+                 backdrop-blur-sm space-y-4 cursor-pointer group"
+          onclick="openSourceModal('${name}')"
+        >
+          <div class="flex items-center gap-3">
+            <span class="w-2.5 h-2.5 rounded-full bg-teal-400 group-hover:bg-teal-300"></span>
+            <h4 class="font-semibold text-teal-300 group-hover:text-teal-200">${name}</h4>
+          </div>
+          
+          <p class="text-gray-300 text-sm leading-relaxed text-justify text-pretty line-clamp-5">
+            ${String(text)}
+          </p>
+        </div>
+      `
+        )
+        .join("");
+
+      container.innerHTML = `
+      <div class="space-y-6">
+        <h3 class="text-xl font-semibold text-teal-400 tracking-tight">
+          Análisis por fuentes – ${api.data.country}
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 animate-fadeIn">
+          ${cards}
+        </div>
+      </div>
+    `;
+    });
+
+    window.openSourceModal = (name) => {
+      const modal = document.getElementById("metric-modal");
+      const content = document.getElementById("metric-modal-content");
+
+      modal.classList.remove("opacity-0", "pointer-events-none");
+      content.classList.remove("scale-90", "opacity-0");
+
+      const api = lastApi;
+      if (!api) return;
+
+      const text = api.insights.sources[name];
+
+      content.innerHTML = `
+      <h2 class="text-xl font-bold text-teal-300 mb-4">${name}</h2>
+
+      <div class="bg-gray-800/70 border border-gray-700 rounded-xl p-4 text-gray-300 leading-relaxed text-justify text-pretty">
+        ${text}
+      </div>
+    `;
+    };
+  })();
+</script>
+
+<style>
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.35s ease-out;
+  }
+</style>

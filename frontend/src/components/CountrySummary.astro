@@ -1,0 +1,193 @@
+---
+interface Props {
+  apiBase: string;
+}
+const { apiBase } = Astro.props;
+---
+
+<!-- PANEL BASE -->
+<div
+  id="country-summary-panel"
+  data-api-base={apiBase}
+  class="w-full max-w-full bg-[#0b101c]
+         p-4 sm:p-6 rounded-xl
+         border border-gray-700
+         space-y-4"
+>
+  <h3 class="text-xl font-bold text-teal-400">Resumen general</h3>
+
+  <p class="text-gray-300 text-sm sm:text-base leading-relaxed">
+    Selecciona un país en el mapa para ver su análisis detallado.
+  </p>
+</div>
+
+<!-- Markdown parser -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+  // @ts-nocheck
+  (function () {
+    const panel = document.getElementById("country-summary-panel");
+    if (!panel) return;
+
+    const API_BASE = panel.dataset.apiBase;
+
+    /* =========================================== */
+    /* FETCH                                       */
+    /* =========================================== */
+    async function fetchQLI(country) {
+      try {
+        const clean = country.trim().toLowerCase();
+        const res = await fetch(`${API_BASE}/qli/auto?country=${clean}`);
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    }
+
+    /* =========================================== */
+    /* PARSER                                      */
+    /* =========================================== */
+    function extractSections(text) {
+      const sections = { resumen: "", interpretacion: "", reflexion: "" };
+      if (!text) return sections;
+
+      const r = text.indexOf("Resumen:");
+      const i = text.indexOf("Interpretación:");
+      const f = text.indexOf("Reflexión:");
+
+      if (r !== -1) {
+        const end = i !== -1 ? i : f !== -1 ? f : text.length;
+        sections.resumen = text.substring(r + 8, end).trim();
+      }
+
+      if (i !== -1) {
+        const end = f !== -1 ? f : text.length;
+        sections.interpretacion = text.substring(i + 15, end).trim();
+      }
+
+      if (f !== -1) {
+        sections.reflexion = text.substring(f + 10).trim();
+      }
+
+      for (const k in sections) {
+        sections[k] = sections[k]
+          .replace(/^\s*\*\*/g, "")
+          .replace(/\*\*\s*$/g, "")
+          .trim();
+      }
+      return sections;
+    }
+
+    function toHtml(text) {
+      if (!text) return "";
+      const looksLikeMd = /[*_#\-`]/.test(text);
+      if (window.marked && looksLikeMd) return marked.parse(text);
+
+      const escaped = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      return escaped
+        .split(/\n\s*\n+/)
+        .map((p) => `<p>${p.trim()}</p>`)
+        .join("");
+    }
+
+    /* =========================================== */
+    /* EVENTO PRINCIPAL                            */
+    /* =========================================== */
+    window.addEventListener("countrySelect", async (event) => {
+      const country = event.detail;
+      if (!country) return;
+
+      panel.innerHTML = `
+        <h3 class="text-xl font-bold text-teal-400">Resumen general</h3>
+        <p class="text-gray-400 text-sm">Cargando datos de <strong>${country}</strong>...</p>
+      `;
+
+      const api = await fetchQLI(country);
+      if (!api || !api.insights) {
+        panel.innerHTML = `
+          <h3 class="text-xl font-bold text-teal-400">Resumen general</h3>
+          <p class="text-red-400 text-sm">No se pudo cargar el resumen.</p>
+        `;
+        return;
+      }
+
+      const fullText = api.insights.summary || "";
+      const { resumen, interpretacion, reflexion } = extractSections(fullText);
+
+      const resumenHTML = toHtml(resumen);
+      const interpretHTML = toHtml(interpretacion);
+      const reflexHTML = toHtml(reflexion);
+
+      const qli = (api.qli * 100).toFixed(1);
+      const countryName =
+        api.data?.country ||
+        api.data?.country_name ||
+        api.data?.name ||
+        country;
+
+      /* =========================================== */
+      /* RENDER FINAL RESPONSIVO                     */
+      /* =========================================== */
+      panel.innerHTML = `
+        <div class="space-y-6 w-full">
+
+          <!-- Encabezado -->
+          <div class="space-y-1">
+            <h3 class="text-xl sm:text-2xl font-bold text-teal-400">
+              ${countryName} — Análisis general
+            </h3>
+            <p class="text-sm sm:text-base text-gray-300">
+              QLI Global:
+              <span class="font-semibold text-teal-300">${qli}%</span>
+            </p>
+          </div>
+
+          <!-- GRID PRINCIPAL RESPONSIVO -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <!-- Resumen -->
+            <article class="bg-[#131a26] rounded-lg border border-gray-700 p-4 sm:p-5 space-y-3">
+              <h4 class="text-white font-semibold text-base sm:text-lg">
+                Resumen
+              </h4>
+              <div class="text-gray-200 text-sm leading-relaxed text-justify text-pretty [text-align-last:auto]">
+
+                ${resumenHTML || "<p>No se encontró resumen.</p>"}
+              </div>
+            </article>
+
+            <!-- Interpretación -->
+            <article class="bg-[#131a26] rounded-lg border border-gray-700 p-4 sm:p-5 space-y-3">
+              <h4 class="text-white font-semibold text-base sm:text-lg">
+                Interpretación
+              </h4>
+              <div class="text-gray-200 text-sm leading-relaxed text-justify text-pretty [text-align-last:auto]">
+
+                ${interpretHTML || "<p>No se encontró interpretación.</p>"}
+              </div>
+            </article>
+
+          </div>
+
+          <!-- Reflexión -->
+          <article class="bg-[#131a26] rounded-lg border border-gray-700 p-4 sm:p-5 space-y-3">
+            <h4 class="text-white font-semibold text-base sm:text-lg">
+              Reflexión
+            </h4>
+            <div class="text-gray-200 text-sm leading-relaxed text-justify text-pretty [text-align-last:auto]">
+
+              ${reflexHTML || "<p>No se encontró reflexión.</p>"}
+            </div>
+          </article>
+
+        </div>
+      `;
+    });
+  })();
+</script>

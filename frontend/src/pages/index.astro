@@ -1,0 +1,242 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import GlobalMap from "../components/GlobalMap.astro";
+import IndicatorGrid from "../components/IndicatorGrid.astro";
+import CountrySummary from "../components/CountrySummary.astro";
+
+const API_BASE = "http://127.0.0.1:8000";
+---
+
+<BaseLayout>
+  <div
+    id="global-loader"
+    class="fixed inset-0 z-50 flex flex-col items-center justify-center
+           bg-black/40 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300"
+  >
+    <div
+      class="h-12 w-12 animate-spin rounded-full border-4 border-teal-400 border-t-transparent"
+    >
+    </div>
+    <p class="mt-4 text-teal-300 text-sm">Procesando…</p>
+  </div>
+
+  <div
+    class="relative min-h-screen px-4 sm:px-6 lg:px-10 pb-20 max-w-[1600px] mx-auto transition-all duration-700"
+  >
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-10 mt-12">
+      <div
+        id="intro-text"
+        class="col-span-1 space-y-6 animate-fade transition-all duration-700"
+      >
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-teal-300">
+          Acerca de QualiLife AI
+        </h1>
+
+        <p
+          class="text-gray-300 text-lg leading-relaxed text-justify [text-align-last:auto]"
+        >
+          Una plataforma de inteligencia analítica diseñada para medir, comparar
+          y entender el bienestar global mediante datos integrados y modelos de
+          IA.
+        </p>
+
+        <p
+          class="text-gray-400 leading-relaxed text-justify [text-align-last:auto]"
+        >
+          Es un motor de observabilidad social y calidad de vida, construido
+          para unificar datos provenientes de múltiples organismos
+          internacionales, procesarlos de manera normalizada y entregarlos en
+          visualizaciones intuitivas con explicaciones generadas por IA.
+        </p>
+
+        <!-- Bloques adicionales -->
+        <div class="space-y-4 pt-4">
+          <div>
+            <h3 class="text-teal-300 font-semibold text-lg">
+              Integración de Datos
+            </h3>
+            <p
+              class="text-gray-400 leading-relaxed text-justify [text-align-last:auto]"
+            >
+              Fuentes como World Bank, WHO, UNESCO, ITU, UNDP y más, procesadas
+              de manera unificada.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="text-teal-300 font-semibold text-lg">Modelos IA</h3>
+            <p
+              class="text-gray-400 leading-relaxed text-justify [text-align-last:auto]"
+            >
+              Interpretación automática, generación de insights y análisis
+              comparativos basados en LLMs como Gemini y OpenAI.
+            </p>
+          </div>
+
+          <div>
+            <h3 class="text-teal-300 font-semibold text-lg">
+              Visualización Avanzada
+            </h3>
+            <p
+              class="text-gray-400 leading-relaxed text-justify [text-align-last:auto]"
+            >
+              Dashboards interactivos, mapas dinámicos y métricas
+              multidimensionales para una comprensión profunda del bienestar
+              global.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <section
+        id="map-section"
+        class="col-span-2 rounded-2xl shadow-xl border border-gray-700 bg-gray-900 overflow-hidden
+               transition-all duration-700 ease-in-out h-[60vh] lg:h-[78vh]
+               opacity-100 translate-y-0 animate-fade animate-delay-1"
+      >
+        <div class="p-4 border-b border-gray-700">
+          <h2
+            class="text-lg font-semibold text-teal-300 uppercase tracking-wide"
+          >
+            Mapa interactivo
+          </h2>
+        </div>
+
+        <div class="p-5 h-[calc(100%-70px)]">
+          <GlobalMap />
+        </div>
+      </section>
+    </section>
+
+    <div
+      id="map-collapsed-bar"
+      class="hidden opacity-0 pointer-events-none transition-all duration-700 ease-in-out
+             bg-gray-900 border border-gray-700 rounded-xl shadow-lg px-6 py-4
+             flex items-center justify-between mt-6"
+    >
+      <p class="text-teal-300 font-semibold tracking-wide">
+        País seleccionado:
+        <span id="collapsed-country" class="text-white"></span>
+      </p>
+
+      <button
+        onclick="expandMap()"
+        class="px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded-md text-white text-sm transition"
+      >
+        Cambiar país
+      </button>
+    </div>
+
+    <section
+      id="analysis-section"
+      class="hidden opacity-0 translate-y-6 pointer-events-none transition-all duration-700 ease-in-out"
+    >
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mt-6">
+        <div
+          class="bg-gray-900 border border-gray-700 rounded-2xl shadow-lg p-6"
+        >
+          <IndicatorGrid client:load apiBase={API_BASE} />
+        </div>
+
+        <div
+          class="xl:col-span-2 bg-gray-900 border border-gray-700 rounded-2xl shadow-lg p-6"
+        >
+          <CountrySummary client:load apiBase={API_BASE} />
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+    window.__currentCountry = null;
+
+    window.addEventListener("countrySelect", (e) => {
+      window.__currentCountry = e.detail;
+      document.getElementById("collapsed-country").textContent = e.detail;
+    });
+
+    window.addEventListener("countryConfirmed", () => {
+      const map = document.getElementById("map-section");
+      const text = document.getElementById("intro-text");
+      const collapsed = document.getElementById("map-collapsed-bar");
+      const analysis = document.getElementById("analysis-section");
+
+      map.classList.add("opacity-0", "-translate-y-6");
+      text.classList.add("opacity-0", "-translate-y-6");
+
+      setTimeout(() => {
+        map.classList.add("hidden");
+        text.classList.add("hidden");
+
+        collapsed.classList.remove(
+          "hidden",
+          "opacity-0",
+          "pointer-events-none"
+        );
+        collapsed.classList.add("opacity-100");
+
+        analysis.classList.remove(
+          "hidden",
+          "pointer-events-none",
+          "opacity-0",
+          "translate-y-6"
+        );
+        analysis.classList.add("opacity-100", "translate-y-0");
+      }, 350);
+    });
+
+    window.expandMap = () => {
+      const map = document.getElementById("map-section");
+      const text = document.getElementById("intro-text");
+      const collapsed = document.getElementById("map-collapsed-bar");
+      const analysis = document.getElementById("analysis-section");
+
+      analysis.classList.add("opacity-0", "translate-y-6");
+      collapsed.classList.add("opacity-0");
+
+      setTimeout(() => {
+        analysis.classList.add("hidden");
+        collapsed.classList.add("hidden");
+      }, 300);
+
+      map.classList.remove("hidden");
+      text.classList.remove("hidden");
+
+      setTimeout(() => {
+        map.classList.remove("opacity-0", "-translate-y-6");
+        text.classList.remove("opacity-0", "-translate-y-6");
+      }, 20);
+    };
+
+    const loader = document.getElementById("global-loader");
+    let activeRequests = 0;
+
+    (function patchFetch() {
+      const original = window.fetch;
+
+      window.fetch = async (...args) => {
+        try {
+          const url = typeof args[0] === "string" ? args[0] : args[0]?.url;
+
+          if (url?.startsWith(API_BASE)) {
+            activeRequests++;
+            loader.classList.remove("opacity-0", "pointer-events-none");
+          }
+
+          return await original(...args);
+        } finally {
+          const url2 = typeof args[0] === "string" ? args[0] : args[0]?.url;
+
+          if (url2?.startsWith(API_BASE)) {
+            activeRequests = Math.max(0, activeRequests - 1);
+
+            if (activeRequests === 0) {
+              loader.classList.add("opacity-0", "pointer-events-none");
+            }
+          }
+        }
+      };
+    })();
+  </script>
+</BaseLayout>

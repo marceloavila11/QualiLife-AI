@@ -1,0 +1,89 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout>
+  <div class="max-w-5xl mx-auto px-6 py-16 space-y-20">
+    <section class="text-center space-y-6 animate-fade">
+      <h1 class="text-4xl font-extrabold text-teal-300">
+        Acerca de QualiLife AI
+      </h1>
+
+      <p
+        class="text-gray-400 text-lg max-w-3xl mx-auto animate-delay-1 animate-fade"
+      >
+        Una plataforma de inteligencia analítica diseñada para medir, comparar y
+        entender el bienestar global mediante datos integrados y modelos de IA.
+      </p>
+
+      <p
+        class="text-gray-400 text-center max-w-3xl mx-auto animate-delay-2 animate-fade"
+      >
+        Es un motor de observabilidad social y calidad de vida, construido para
+        unificar datos provenientes de múltiples organismos internacionales,
+        procesarlos de manera normalizada y entregarlos en visualizaciones
+        intuitivas con explicaciones generadas por IA.
+      </p>
+    </section>
+
+    <section class="space-y-6 animate-fade animate-delay-1">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 mt-10">
+        <div
+          class="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg animate-fade animate-delay-1"
+        >
+          <h3 class="text-lg font-semibold text-teal-300 mb-3">
+            Integración de Datos
+          </h3>
+          <p class="text-gray-400 text-sm">
+            Fuentes como World Bank, WHO, UNESCO, ITU, UNDP y más, procesadas de
+            forma unificada.
+          </p>
+        </div>
+
+        <div
+          class="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg animate-fade animate-delay-2"
+        >
+          <h3 class="text-lg font-semibold text-teal-300 mb-3">Modelos IA</h3>
+          <p class="text-gray-400 text-sm">
+            Interpretación automática, generación de insights y análisis
+            comparativos basados en LLMs (Gemini/OpenAI).
+          </p>
+        </div>
+
+        <div
+          class="bg-gray-900 border border-gray-700 rounded-xl p-6 shadow-lg animate-fade animate-delay-3"
+        >
+          <h3 class="text-lg font-semibold text-teal-300 mb-3">
+            Visualización Avanzada
+          </h3>
+          <p class="text-gray-400 text-sm">
+            Dashboards interactivos, mapas dinámicos y métricas
+            multidimensionales para una comprensión profunda del bienestar
+            global.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="space-y-6 pt-12 animate-fade animate-delay-2">
+      <h2 class="text-3xl font-semibold text-teal-300 text-center">
+        Tecnología que impulsa la plataforma
+      </h2>
+
+      <div
+        class="bg-gray-900 border border-gray-700 rounded-2xl p-10 shadow-xl animate-fade animate-delay-3"
+      >
+        <ul
+          class="grid sm:grid-cols-2 md:grid-cols-3 gap-6 text-gray-400 text-sm"
+        >
+          <li>FastAPI (Backend / API Gateway Inteligente)</li>
+          <li>Astro + Tailwind (Frontend optimizado)</li>
+          <li>Leaflet.js (Mapa interactivo)</li>
+          <li>Gemini / OpenAI (Motor de análisis IA)</li>
+          <li>MongoDB</li>
+          <li>AWS / Docker / Microservicios (Arquitectura productiva)</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
